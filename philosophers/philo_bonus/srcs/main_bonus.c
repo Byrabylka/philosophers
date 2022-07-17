@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   main_bonus.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: fooswyn <fooswyn@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/07/11 18:25:09 by fooswyn           #+#    #+#             */
-/*   Updated: 2022/07/17 20:44:06 by fooswyn          ###   ########.fr       */
+/*   Created: 2022/07/17 20:58:18 by fooswyn           #+#    #+#             */
+/*   Updated: 2022/07/17 22:09:47 by fooswyn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../incs/philo.h"
+#include "../incs/philo_bonus.h"
 
 int check_args(int argc, char **argv)
 {
@@ -26,6 +26,19 @@ int check_args(int argc, char **argv)
 	return (1);
 }
 
+void    init_semaphor(t_data *data)
+{
+    sem_unlink("sem");
+    sem_unlink("end");
+    data->sem = sem_open("sem", O_CREAT, 0644, data->nb_philo);
+    data->end = sem_open("end",  O_CREAT, 0644, 1);
+    if (data->sem == SEM_FAILED || data->end == SEM_FAILED)
+    {
+        free(data->philos);
+        exit(0);
+    }
+}
+
 void	init_data(t_data *data)
 {
 	int	i;
@@ -34,58 +47,42 @@ void	init_data(t_data *data)
 	data->time = time_now();
 	while (i < data->nb_philo)
 	{
-		pthread_mutex_init(&data->forks[i], NULL);
 		data->philos[i].i = i + 1;
 		data->philos[i].eat_count = 0;
 		data->philos[i].data = data;
 		data->philos[i].time = data->time;
 		i++;
-	}	
-}
-
-void    init_threads(t_data *data)
-{
-	int i;
-
-	i = 0;
-	pthread_mutex_init(&data->end, NULL);
-	while (i < data->nb_philo)
-	{
-		pthread_create(&data->philos[i].thread, NULL, routine, &data->philos[i]);
-		i++;
-	}
-	i = 0;
-	while (i < data->nb_philo)
-	{
-		pthread_detach(data->philos[i].thread);
-		i++;
 	}
 }
 
-void    free_data(t_data *data)
+void    *init_thread(t_data *data)
 {
-	int i;
+    int i;
+    int pid;
+    int *pids;
 
-	i = 0;
-	while (i < data->nb_philo)
-	{
-		pthread_mutex_destroy(&(data->forks[i]));
-		i++;
-	}
-	pthread_mutex_destroy(&data->end);
-	free(data->philos);
-	free(data->forks);
+    i = 0;
+    init_semaphor(data);
+	pids = malloc(sizeof(int) * data->nb_philo);
+    while (i < data->nb_philo)
+    {
+        pid = fork();
+        if (!pid)
+            manage(&data->philos[i]);
+		else
+        	pids[i] = pid;
+        i++;
+    }
+    return (pids);
 }
 
 int main(int argc, char **argv)
 {
-	t_data  data;
+    t_data  data;
+    int     *pid;
 
 	if ((argc != 5 && argc != 6) || !check_args(argc, argv))
-	{
-		printf("Wrong arguments\n");
-		return(0);
-	}
+		return(printf("Wrong arguments\n"));
 	data.nb_philo = ft_atoi(argv[1]);
 	data.time_death = ft_atoi(argv[2]);
 	data.time_eat = ft_atoi(argv[3]);
@@ -95,12 +92,10 @@ int main(int argc, char **argv)
 		data.nb_eat = ft_atoi(argv[5]);
 	data.philos = malloc(sizeof(t_pthread) * data.nb_philo);
 	if (!data.philos)
-		return (0);
-	data.forks = malloc(sizeof(pthread_mutex_t) * data.nb_philo);
-	 if (!data.forks)
-		return (0);
-	init_data(&data);
-	init_threads(&data);
-	manage(&data);
-	free_data(&data);
+		return (printf("Allocation Error\n"), 1);
+    init_data(&data);
+ 	pid = init_thread(&data);
+	sem_close(data.end);
+	sem_close(data.sem);
+	ft_exit(&data, pid, 0);   
 }

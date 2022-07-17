@@ -1,24 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philo.h                                            :+:      :+:    :+:   */
+/*   philo_bonus.h                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: fooswyn <fooswyn@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/07/10 20:27:41 by fooswyn           #+#    #+#             */
-/*   Updated: 2022/07/17 20:36:06 by fooswyn          ###   ########.fr       */
+/*   Created: 2022/07/17 20:56:49 by fooswyn           #+#    #+#             */
+/*   Updated: 2022/07/17 22:06:11 by fooswyn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PHILO_H
-# define PHILO_H
+#ifndef PHILO_BONUS_H
+# define PHILO_BONUS_H
 
-# include <sys/time.h>
-# include <unistd.h>
 # include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
 # include <pthread.h>
+# include <signal.h>
+# include <sys/time.h>
+# include <semaphore.h>
+# include <unistd.h>
+# include <stdlib.h>
 
 typedef struct s_pthread {
 	long long		time;
@@ -37,16 +38,18 @@ typedef struct  s_data
 	int					nb_eat;
 	long long			time;
 	t_pthread			*philos;
-	pthread_mutex_t		end;
-	pthread_mutex_t		*forks;
+	sem_t       		*end;
+	sem_t		        *sem;
 } t_data;
 
 long		ft_atoi(const char *str);
 long long	time_now(void);
 void    	spi(unsigned long time);
+void    	ft_kill(t_data *data, int *pids);
+void		free_exit(t_data *data, int flag);
 
-int			check_nb_eat(int *count, t_pthread *philo);
 void    	print_info(t_pthread *philo, char *str, int flag);
 void    	*routine(void *philo);
-void    	*manage(t_data *data);
+void    	*manage(t_pthread *dphilo);
+void		ft_exit(t_data *data, int *pids, int size);
 #endif

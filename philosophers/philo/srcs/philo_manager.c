@@ -6,7 +6,7 @@
 /*   By: fooswyn <fooswyn@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/14 17:01:08 by fooswyn           #+#    #+#             */
-/*   Updated: 2022/07/14 19:31:24 by fooswyn          ###   ########.fr       */
+/*   Updated: 2022/07/17 21:45:16 by fooswyn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,11 @@ void    lock_unlock_fork(t_pthread *philo, int flag)
 
 void    print_info(t_pthread *philo, char *str, int flag)
 {
-	pthread_mutex_lock(&philo->data->death);
+	pthread_mutex_lock(&philo->data->end);
 	if (str)
 		printf("%lld ms :: %d philo %s\n", time_now() - philo->data->time, philo->i, str);
 	if (flag)
-		pthread_mutex_unlock(&philo->data->death);
+		pthread_mutex_unlock(&philo->data->end);
 }
 
 int	check_nb_eat(int *count, t_pthread *philo)
@@ -60,9 +60,9 @@ void    *routine(void *philosopher)
 	{
 		lock_unlock_fork(philo, 0);
 		print_info(philo, "is eating", 1);
-		philo->eat_count++;
 		spi(philo->data->time_eat);
 		lock_unlock_fork(philo, 1);
+		philo->eat_count++;
 		philo->time = time_now();
 		print_info(philo, "is sleeping", 1);
 		spi(philo->data->time_sleep);
